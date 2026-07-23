@@ -1,33 +1,46 @@
 import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+
+// Inicializa a API usando a chave armazenada no arquivo .env
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { studentName, perguntaUsuario } = body;
+    // Recebemos o histórico de mensagens para a IA ter memória da conversa
+    const { studentName, perguntaUsuario, historicoMensagens } = body;
 
-    // Converte a pergunta do Eduardo para letras minúsculas para a IA identificar palavras-chave
-    const pergunta = (perguntaUsuario || "").toLowerCase();
-    
-    // Cérebro de tomada de decisão da IA baseado no que você digita
-    let respostaIA = `Entendido, ${studentName}! Analisei sua mensagem. Vou ajustar seus blocos de foco para priorizar o que você precisa.`;
-
-    if (pergunta.includes("imprevisto") || pergunta.includes("cansado") || pergunta.includes("parar")) {
-      respostaIA = `⚠️ Comando de Adaptação Recebido. Não se preocupe, ${studentName}. O Apex calculou o imprevisto e redistribuiu a carga horária restante igualmente ao longo dos próximos 7 dias para não acumular matéria. Pode descansar!`;
-    } 
-    else if (pergunta.includes("química") || pergunta.includes("materia") || pergunta.includes("estudar")) {
-      respostaIA = `🧪 Análise de Matéria: Identifiquei que seu último bloco de Química teve 58% de acerto. Adicionei 15 minutos extras de revisão teórica no seu cronograma e separei 5 flashcards prioritários na sua aba de Revisão.`;
-    } 
-    else if (pergunta.includes("redação") || pergunta.includes("tema")) {
-      respostaIA = `📝 Módulo de Escrita Ativo: Seu tema da semana sobre 'Saúde Mental no Esporte' está aguardando o rascunho. Se precisar de repertórios sociológicos ou dados estatísticos para a introdução, me avise por aqui!`;
-    } 
-    else if (pergunta.includes("sono") || pergunta.includes("dormi") || pergunta.includes("água") || pergunta.includes("habito")) {
-      respostaIA = `💪 Monitoramento Biológico: Excelente registro de hábitos! Dormir bem e se manter hidratado aumenta a retenção de memória a longo prazo em até 30%. Seus bônus de XP diários foram creditados no perfil.`;
-    }
-    else if (pergunta.includes("ajuda") || pergunta.includes("como funciona")) {
-      respostaIA = `🦉 Olá! Eu sou o Treinador IA do Apex. Você pode me avisar sobre imprevistos para eu recalcular suas metas, me pedir temas de redação ou relatar cansaço para eu aliviar o cronograma do dia.`;
+    if (!perguntaUsuario) {
+      return NextResponse.json({ success: false, error: "Mensagem vazia" }, { status: 400 });
     }
 
-    // Retorna a resposta dinâmica gerada
+    // Definimos as instruções de comportamento do Treinador Apex
+    const instrucaoSistema = {
+      role: "system",
+      content: `Você é o Treinador IA do Apex, um assistente de estudos altamente inteligente e prestativo para o estudante ${studentName}. 
+      Você deve ajudá-lo a gerenciar cronogramas, adaptar cargas horárias quando ele relatar cansaço ou imprevistos, dar dicas de matérias (como Química) e redação. 
+      Responda sempre de forma motivadora, curta e direta.`
+    };
+
+    // Monta a estrutura de mensagens contendo o contexto passado
+    const mensagensParaAPI = [
+      instrucaoSistema,
+      ...(historicoMensagens || []), // Inclui conversas passadas se o seu front-end enviar
+      { role: "user", content: perguntaUsuario }
+    ];
+
+    // Faz a chamada real para o motor da inteligência artificial
+    const listagemIA = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // Modelo rápido e econômico
+      messages: mensagensParaAPI,
+      temperature: 0.7,
+    });
+
+    const respostaIA = listagemIA.choices[0].message.content;
+
+    // Retorna a resposta real gerada pela Inteligência Artificial
     return NextResponse.json({
       success: true,
       status: "RECALCULADO",
@@ -36,7 +49,11 @@ export async function POST(request: Request) {
       }
     });
 
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Falha no motor de IA" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Erro na API Apex:", error);
+    return NextResponse.json(
+      { success: false, error: "Falha no motor de IA real: " + error.message }, 
+      { status: 500 }
+    );
   }
 }

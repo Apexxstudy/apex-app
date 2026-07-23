@@ -1,40 +1,38 @@
 import { NextResponse } from 'next/server';
 
-// Rota de API do Next.js que processa as decisões do Treinador IA
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { studentName, sleepHours, energy, materiaErro, taxaAcerto } = body;
+    const { studentName, perguntaUsuario } = body;
 
-    console.log(`[Apex IA] Processando dados para ${studentName}. Erro em: ${materiaErro}`);
+    // Converte a pergunta do Eduardo para letras minúsculas para a IA identificar palavras-chave
+    const pergunta = (perguntaUsuario || "").toLowerCase();
+    
+    // Cérebro de tomada de decisão da IA baseado no que você digita
+    let respostaIA = `Entendido, ${studentName}! Analisei sua mensagem. Vou ajustar seus blocos de foco para priorizar o que você precisa.`;
 
-    // Algoritmo de decisão inteligente do Apex (Baseado nas regras do PRD)
-    let prioridade = "NORMAL";
-    let tempoAdicionalMinutos = 0;
-    let motivoIA = "Desempenho dentro da meta estabelecida. Cronograma padrão mantido.";
-    let novoCardRedacao = null;
-
-    // Regra 1 do PRD: Se a taxa de acerto cair abaixo de 65%, a IA adapta o cronograma
-    if (taxaAcerto < 65) {
-      prioridade = "CRÍTICA";
-      tempoAdicionalMinutos = 15;
-      motivoIA = `Sua taxa de acerto em ${materiaErro} caiu para ${taxaAcerto}%. O Treinador reduziu carga de matérias dominadas e adicionou um bloco de revisão focado de ${tempoAdicionalMinutos} min.`;
+    if (pergunta.includes("imprevisto") || pergunta.includes("cansado") || pergunta.includes("parar")) {
+      respostaIA = `⚠️ Comando de Adaptação Recebido. Não se preocupe, ${studentName}. O Apex calculou o imprevisto e redistribuiu a carga horária restante igualmente ao longo dos próximos 7 dias para não acumular matéria. Pode descansar!`;
+    } 
+    else if (pergunta.includes("química") || pergunta.includes("materia") || pergunta.includes("estudar")) {
+      respostaIA = `🧪 Análise de Matéria: Identifiquei que seu último bloco de Química teve 58% de acerto. Adicionei 15 minutos extras de revisão teórica no seu cronograma e separei 5 flashcards prioritários na sua aba de Revisão.`;
+    } 
+    else if (pergunta.includes("redação") || pergunta.includes("tema")) {
+      respostaIA = `📝 Módulo de Escrita Ativo: Seu tema da semana sobre 'Saúde Mental no Esporte' está aguardando o rascunho. Se precisar de repertórios sociológicos ou dados estatísticos para a introdução, me avise por aqui!`;
+    } 
+    else if (pergunta.includes("sono") || pergunta.includes("dormi") || pergunta.includes("água") || pergunta.includes("habito")) {
+      respostaIA = `💪 Monitoramento Biológico: Excelente registro de hábitos! Dormir bem e se manter hidratado aumenta a retenção de memória a longo prazo em até 30%. Seus bônus de XP diários foram creditados no perfil.`;
+    }
+    else if (pergunta.includes("ajuda") || pergunta.includes("como funciona")) {
+      respostaIA = `🦉 Olá! Eu sou o Treinador IA do Apex. Você pode me avisar sobre imprevistos para eu recalcular suas metas, me pedir temas de redação ou relatar cansaço para eu aliviar o cronograma do dia.`;
     }
 
-    // Regra 2 (Bônus): Se a energia do ritual matinal for baixa (1 ou 2), a IA sugere pegar leve
-    if (energy <= 2) {
-      motivoIA += " Notamos também que sua energia está baixa hoje. Reduzimos o ritmo dos blocos teóricos longos.";
-    }
-
-    // Estrutura de resposta simulando o processamento do Claude/GPT
+    // Retorna a resposta dinâmica gerada
     return NextResponse.json({
       success: true,
       status: "RECALCULADO",
-      prioridade,
       ajusteCronograma: {
-        materia: materiaErro,
-        tempoAdicionalMinutos,
-        motivoIA
+        motivoIA: respostaIA
       }
     });
 

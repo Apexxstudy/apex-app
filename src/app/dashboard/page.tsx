@@ -8,14 +8,24 @@ export default function DashboardPage() {
   const [sleepHours, setSleepHours] = useState('7.5');
   const [energy, setEnergy] = useState(4);
 
+  // Estados para o Checklist de Hábitos Otimizados (Caixa de Hábitos)
+  const [habits, setHabits] = useState([
+    { id: 1, name: "Treino Concluído (Foco Físico) 💪", done: false },
+    { id: 2, name: "Meta de Hidratação Batida (3L) 💧", done: false },
+    { id: 3, name: "30 min de Leitura Ativa 📚", done: false },
+    { id: 4, name: "Sem Telas 30 min Antes de Dormir 📵", done: false },
+  ]);
+
   // Dados mockados (simulados) do estudante
   const studentName = "Eduardo";
   const daysToEnem = 857;
   const targetScore = 810;
   const yesterdayStudyTime = "2h18";
 
-  // Lista de botões de energia estruturada de forma segura
-  const energyLevels = Array.from({ length: 5 }, (_, i) => i + 1);
+  // Função para marcar/desmarcar hábitos
+  const toggleHabit = (id: number) => {
+    setHabits(habits.map(h => h.id === id ? { ...h, done: !h.done } : h));
+  };
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50 font-sans p-4 md:p-8 selection:bg-orange-500/30 relative">
@@ -73,7 +83,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Foco/Energia (1-5):</span>
                   <div className="flex gap-1">
-                    {energyLevels.map((num: number) => (
+                    {Array.from({ length: 5 }, (_, i) => i + 1).map((num) => (
                       <button 
                         key={num}
                         type="button"
@@ -101,7 +111,7 @@ export default function DashboardPage() {
         {/* GRID CENTRAL DO DASHBOARD */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* COLUNA ESQUERDA: RELATÓRIO DO TREINADOR E CRONOGRAMA */}
+          {/* COLUNA ESQUERDA: RELATÓRIO DO TREINADOR, CRONOGRAMA E REDAÇÃO */}
           <div className="md:col-span-2 space-y-6">
             
             {/* O CARD DO TREINADOR */}
@@ -131,7 +141,6 @@ export default function DashboardPage() {
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Cronograma do Dia</h3>
               
               <div className="space-y-3">
-                {/* Matéria 1 */}
                 <div className="flex items-center justify-between p-3.5 bg-zinc-950/40 border border-zinc-900 rounded-xl hover:border-zinc-800 transition-colors">
                   <div>
                     <span className="text-xs font-bold text-orange-500/90 block mb-0.5">Química</span>
@@ -139,7 +148,6 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-xs font-mono text-zinc-400 bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800/40">15 min</span>
                 </div>
-                {/* Matéria 2 */}
                 <div className="flex items-center justify-between p-3.5 bg-zinc-950/40 border border-zinc-900 rounded-xl hover:border-zinc-800 transition-colors">
                   <div>
                     <span className="text-xs font-bold text-blue-400 block mb-0.5">Matemática</span>
@@ -150,35 +158,44 @@ export default function DashboardPage() {
               </div>
             </div>
 
-          </div>
-
-          {/* COLUNA DIREITA: STATUS DO PERFIL / XP RPG */}
-          <div className="space-y-6">
-            
-            {/* MINI PERFIL GAMIFICADO (ESTILO ACADEMIA) */}
+            {/* 📝 NOVO CARD: CAIXA DE REDAÇÃO DA SEMANA */}
             <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-6 backdrop-blur-sm space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm font-black">
-                  ED
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-zinc-200">Nível 14</h4>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Foco Absoluto</span>
-                </div>
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Fila de Produção: Redação</h3>
+                <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-bold ring-1 ring-amber-500/20">Em Andamento</span>
               </div>
-
-              {/* Barra de Progresso XP */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono text-zinc-500">
-                  <span>Progresso do Nível</span>
-                  <span className="text-zinc-400">1.420 / 2.000 XP</span>
-                </div>
-                <div className="h-2 w-full bg-zinc-950 border border-zinc-900 rounded-full overflow-hidden">
-                  <div className="h-full w-[71%] bg-gradient-to-r from-amber-500 to-orange-600" />
+              <div className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-900 space-y-3">
+                <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Tema Proposto da Semana</span>
+                <p className="text-sm leading-relaxed text-zinc-300">
+                  A influência das redes sociais sobre as escolhas de carreira dos jovens no século XXI.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-zinc-500">Tempo definido</span>
+                  <span className="text-xs font-semibold text-orange-400">45 min</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* COLUNA DIREITA: CHECKLIST E INDICADORES */}
+          <aside className="space-y-6">
+            <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-6 backdrop-blur-sm">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Checklist de Hábitos</h3>
+              <div className="space-y-3">
+                {habits.map((habit) => (
+                  <button
+                    key={habit.id}
+                    type="button"
+                    onClick={() => toggleHabit(habit.id)}
+                    className={`w-full flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${habit.done ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:border-zinc-700'}`}
+                  >
+                    <span>{habit.name}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">{habit.done ? 'Feito' : 'Pendente'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </main>

@@ -3,20 +3,25 @@
 import React, { useState, useEffect } from 'react';
 
 export default function FocoPage() {
-  // Estados do cronômetro (padrão 25 minutos de Deep Work)
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
+  const [minutesInput, setMinutesInput] = useState(50);
+  const [secondsLeft, setSecondsLeft] = useState(50 * 60);
   const [isActive, setIsActive] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [xpGained, setXpGained] = useState(0);
 
-  // Efeito para rodar o cronômetro em tempo real
+  // Sincroniza o cronômetro sempre que o usuário muda o tempo padrão ou alterna o modo
+  useEffect(() => {
+    if (!isActive) {
+      setSecondsLeft(minutesInput * 60);
+    }
+  }, [minutesInput, isActive]);
+
   useEffect(() => {
     let interval: any = null;
 
     if (isActive && secondsLeft > 0) {
       interval = setInterval(() => {
-        setSecondsLeft((secondsLeft) => secondsLeft - 1);
-        // Ganha 1 de XP simulado a cada 10 segundos de foco ativo
+        setSecondsLeft((prev) => prev - 1);
         if (secondsLeft % 10 === 0 && !isBreak) {
           setXpGained((prev) => prev + 1);
         }
@@ -30,21 +35,27 @@ export default function FocoPage() {
     return () => clearInterval(interval);
   }, [isActive, secondsLeft, isBreak]);
 
-  // Funções de controle
   const toggleTimer = () => setIsActive(!isActive);
   
   const resetTimer = () => {
     setIsActive(false);
-    setSecondsLeft(isBreak ? 5 * 60 : 25 * 60);
+    setSecondsLeft(minutesInput * 60);
   };
 
   const switchMode = (toBreak: boolean) => {
     setIsActive(false);
     setIsBreak(toBreak);
-    setSecondsLeft(toBreak ? 5 * 60 : 25 * 60);
+    setMinutesInput(toBreak ? 10 : 25);
   };
 
-  // Formatação do tempo para o padrão MM:SS
+  const adjustMinutes = (amount: number) => {
+    if (isActive) return; // Impede mudar o tempo com o cronômetro rodando
+    setMinutesInput((prev) => {
+      const next = prev + amount;
+      return next > 0 ? next : 1; // Não deixa o tempo ser menor que 1 minuto
+    });
+  };
+
   const formatTime = () => {
     const minutes = Math.floor(secondsLeft / 60);
     const seconds = secondsLeft % 60;
@@ -53,12 +64,11 @@ export default function FocoPage() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-50 font-sans flex flex-col items-center justify-center p-6 selection:bg-orange-500/30 relative overflow-hidden">
-      {/* Luz de fundo dinâmica que muda de cor se estiver em pausa ou foco */}
       <div className={`absolute h-[400px] w-[400px] rounded-full blur-[140px] pointer-events-none opacity-10 transition-all duration-700 ${isBreak ? 'bg-blue-500 top-1/4' : 'bg-orange-500 top-1/4'}`} />
 
       <div className="w-full max-w-md bg-zinc-900/20 border border-zinc-800/60 backdrop-blur-md rounded-2xl p-8 text-center space-y-8 relative">
         
-        {/* Switcher de Modo Aesthetic */}
+        {/* Switcher de Modo */}
         <div className="grid grid-cols-2 p-1 bg-zinc-950 border border-zinc-900 rounded-xl max-w-[240px] mx-auto">
           <button 
             type="button"
@@ -76,20 +86,47 @@ export default function FocoPage() {
           </button>
         </div>
 
-        {/* Display do Cronômetro Central */}
-        <div className="space-y-2">
+        {/* Display do Cronômetro com Ajustadores de Tempo */}
+        <div className="space-y-4">
           <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] block">
             {isBreak ? "Recuperando Energia" : "Carga de Conhecimento Ativa"}
           </span>
-          <h1 className="text-7xl font-mono font-black tracking-tighter bg-gradient-to-b from-zinc-50 to-zinc-400 bg-clip-text text-transparent">
-            {formatTime()}
-          </h1>
+          
+          <div className="flex items-center justify-center gap-6 select-none">
+            {/* Botão de Diminuir Minutos (Desativado se o timer estiver rodando) */}
+            <button 
+              type="button"
+              onClick={() => adjustMinutes(-5)}
+              disabled={isActive}
+              className={`text-2xl font-bold font-mono h-10 w-10 border rounded-xl flex items-center justify-center transition-all ${isActive ? 'border-zinc-900 text-zinc-800 cursor-not-allowed' : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 active:bg-zinc-900'}`}
+            >
+              -
+            </button>
+
+            <h1 className="text-7xl font-mono font-black tracking-tighter bg-gradient-to-b from-zinc-50 to-zinc-400 bg-clip-text text-transparent w-44">
+              {formatTime()}
+            </h1>
+
+            {/* Botão de Aumentar Minutos */}
+            <button 
+              type="button"
+              onClick={() => adjustMinutes(5)}
+              disabled={isActive}
+              className={`text-2xl font-bold font-mono h-10 w-10 border rounded-xl flex items-center justify-center transition-all ${isActive ? 'border-zinc-900 text-zinc-800 cursor-not-allowed' : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 active:bg-zinc-900'}`}
+            >
+              +
+            </button>
+          </div>
+          
+          {!isActive && (
+            <p className="text-[11px] text-zinc-600 font-medium">Ajuste o tempo de 5 em 5 minutos antes de iniciar.</p>
+          )}
         </div>
 
-        {/* Painel de Recompensa RPG em Tempo Real */}
+        {/* Painel de Recompensa RPG */}
         {!isBreak && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-500/5 border border-orange-500/10 rounded-full text-xs font-mono text-orange-400 mx-auto animate-pulse">
-            <span>🔥 +{xpGained} XP acumulados neste bloco</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-500/5 border border-orange-500/10 rounded-full text-xs font-mono text-orange-400 mx-auto">
+            <span>🔥 +{xpGained} XP acumulados</span>
           </div>
         )}
 
@@ -107,13 +144,12 @@ export default function FocoPage() {
             type="button"
             onClick={resetTimer}
             className="h-12 w-12 rounded-xl bg-zinc-950 border border-zinc-900 flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-zinc-800 transition-all"
-            title="Reiniciar Bloco"
           >
             ↻
           </button>
         </div>
 
-        {/* Informações Auxiliares do Bloco */}
+        {/* Informações Auxiliares */}
         <div className="pt-4 border-t border-zinc-900 text-left space-y-2">
           <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Matéria em foco</span>
           <div className="flex items-center justify-between text-sm">
